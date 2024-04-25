@@ -44,21 +44,35 @@ type Food struct {
 	Position Point
 }
 
+// Function to update the Snake's position
 func (g *Game) Update(screen *ebiten.Image) error {
+
+	g.snake.Move()
+
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) && g.snake.Direction.X == 0 {
+		g.snake.Direction = Point{X: -1, Y: 0}
+	} else if ebiten.IsKeyPressed(ebiten.KeyRight) && g.snake.Direction.X == 0 {
+		g.snake.Direction = Point{X: 1, Y: 0}
+	} else if ebiten.IsKeyPressed(ebiten.KeyUp) && g.snake.Direction.Y == 0 {
+		g.snake.Direction = Point{X: 0, Y: -1}
+	} else if ebiten.IsKeyPressed(ebiten.KeyDown) && g.snake.Direction.Y == 0 {
+		g.snake.Direction = Point{X: 0, Y: 1}
+	}
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw background
-	screen.Fill(color.RGBA{0, 0, 0, 255})
+	screen.Fill(color.RGBA{154, 198, 0, 255})
 
 	// Draw snake
 	for _, p := range g.snake.Body {
-		ebitenutil.DrawRect(screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{0, 255, 0, 255})
+		ebitenutil.DrawRect(screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{33, 50, 15, 255})
 	}
 
 	// Draw food
-	ebitenutil.DrawRect(screen, float64(g.food.Position.X*tileSize), float64(g.food.Position.Y*tileSize), tileSize, tileSize, color.RGBA{255, 0, 0, 255})
+	ebitenutil.DrawRect(screen, float64(g.food.Position.X*tileSize), float64(g.food.Position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255})
 
 	// Create a font.Face
 	face := basicfont.Face7x13
