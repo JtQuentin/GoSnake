@@ -3,13 +3,43 @@ package main
 import (
 	"log"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
-type Game struct{}
+const (
+	screenWidth  = 320
+	screenHeight = 240
+	tileSize     = 5
+)
 
-func (g *Game) Update() error {
+type Game struct {
+	snake         *Snake
+	food          *Food
+	score         int
+	gameOver      bool
+	gameWon       bool
+	ticks         int
+	updateCounter int
+	speed         int
+}
+
+type Point struct {
+	X int
+	Y int
+}
+
+type Snake struct {
+	Body        []Point
+	Direction   Point
+	GrowCounter int
+}
+
+type Food struct {
+	Position Point
+}
+
+func (g *Game) Update(screen *ebiten.Image) error {
 	return nil
 }
 
@@ -22,7 +52,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
-	ebiten.SetWindowSize(640, 480)
+	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("GoSnake")
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
