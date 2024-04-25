@@ -3,6 +3,7 @@ package main
 import (
 	"image/color"
 	"log"
+	"math/rand"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -52,6 +53,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, p := range g.snake.Body {
 		ebitenutil.DrawRect(screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{0, 255, 0, 255})
 	}
+
+	// Draw food
+	ebitenutil.DrawRect(screen, float64(g.food.Position.X*tileSize), float64(g.food.Position.Y*tileSize), tileSize, tileSize, color.RGBA{255, 0, 0, 255})
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -61,6 +65,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func main() {
 	game := &Game{
 		snake:    NewSnake(),
+		food:     NewFood(),
 		gameOver: false,
 		ticks:    0,
 		speed:    10,
@@ -94,5 +99,15 @@ func (s *Snake) Move() {
 		s.GrowCounter--
 	} else {
 		s.Body = s.Body[:len(s.Body)-1]
+	}
+}
+
+// Function to create the Food
+func NewFood() *Food {
+	return &Food{
+		Position: Point{
+			X: rand.Intn(screenWidth / tileSize),
+			Y: rand.Intn(screenHeight / tileSize),
+		},
 	}
 }
