@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/text"
+	"golang.org/x/image/font/basicfont"
 )
 
 const (
@@ -56,6 +59,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw food
 	ebitenutil.DrawRect(screen, float64(g.food.Position.X*tileSize), float64(g.food.Position.Y*tileSize), tileSize, tileSize, color.RGBA{255, 0, 0, 255})
+
+	// Create a font.Face
+	face := basicfont.Face7x13
+
+	// Draw score
+	scoreText := fmt.Sprintf("Score: %d", g.score)
+	text.Draw(screen, scoreText, face, 5, screenHeight-5, color.White)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
