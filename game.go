@@ -20,11 +20,6 @@ type Updatable interface {
 	Update() error
 }
 
-type ScoreEntry struct {
-	Name  string
-	Score int
-}
-
 func NewGame(snake *Snake, food *Food, renderer *Renderer, logic *GameLogic, startManager *GameStartManager) *Game {
 	return &Game{
 		snake:        snake,
