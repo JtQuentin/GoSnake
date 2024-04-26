@@ -380,3 +380,4 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 
 	}
 }
+
