@@ -5,11 +5,13 @@ import (
 	"image/color"
 	"log"
 	"math/rand"
+	"time"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
 	"github.com/hajimehoshi/ebiten/text"
+	"golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
 )
 
@@ -20,19 +22,14 @@ const (
 )
 
 type Game struct {
-	snake         *Snake
-	food          *Food
-	score         int
-	gameOver      bool
-	gameWon       bool
-	ticks         int
-	updateCounter int
-	speed         int
+	snake    *Snake
+	food     *Food
+	renderer *Renderer
+	logic    *GameLogic
 }
 
 type Point struct {
-	X int
-	Y int
+	X, Y int
 }
 
 type Snake struct {
@@ -45,110 +42,58 @@ type Food struct {
 	Position Point
 }
 
-// Function to update the Snake's position
+type Renderer struct {
+	screen *ebiten.Image
+	face   font.Face
+}
+
+type GameLogic struct {
+	score         int
+	gameOver      bool
+	gameWon       bool
+	speed         int
+	updateCounter int
+}
+
 func (g *Game) Update(screen *ebiten.Image) error {
-
-	if g.gameOver || g.gameWon {
-		if inpututil.IsKeyJustPressed(ebiten.KeyR) {
-			g.restart()
-		}
+	if g.logic.HandleGameState(inpututil.IsKeyJustPressed(ebiten.KeyR)) {
+		g.restart()
 		return nil
 	}
 
-	g.updateCounter++
-	if g.updateCounter < g.speed {
-		return nil
-	}
-	g.updateCounter = 0
-
-	g.snake.Move()
-
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) && g.snake.Direction.X == 0 {
-		g.snake.Direction = Point{X: -1, Y: 0}
-	} else if ebiten.IsKeyPressed(ebiten.KeyRight) && g.snake.Direction.X == 0 {
-		g.snake.Direction = Point{X: 1, Y: 0}
-	} else if ebiten.IsKeyPressed(ebiten.KeyUp) && g.snake.Direction.Y == 0 {
-		g.snake.Direction = Point{X: 0, Y: -1}
-	} else if ebiten.IsKeyPressed(ebiten.KeyDown) && g.snake.Direction.Y == 0 {
-		g.snake.Direction = Point{X: 0, Y: 1}
-	}
-
-	head := g.snake.Body[0]
-	if head.X < 0 || head.Y < 0 || head.X >= screenWidth/tileSize || head.Y >= screenHeight/tileSize {
-		g.gameOver = true
-		g.speed = 10
-	}
-
-	for _, part := range g.snake.Body[1:] {
-		if head.X == part.X && head.Y == part.Y {
-			g.gameOver = true
-			g.speed = 10
-		}
-	}
-
-	if head.X == g.food.Position.X && head.Y == g.food.Position.Y {
-		g.score++
-		g.snake.GrowCounter += 1
-		g.food = NewFood()
-
-		if g.score == 25 {
-			g.gameWon = true
-			g.speed = 10
-		} else {
-
-			if g.speed > 2 {
-				g.speed--
-			}
-		}
+	if g.logic.UpdateTick() {
+		g.snake.updateDirection()
+		g.logic.CheckCollisions(g.snake, g.food)
 	}
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Draw background
-	screen.Fill(color.RGBA{154, 198, 0, 255})
-
-	// Draw snake
-	for _, p := range g.snake.Body {
-		ebitenutil.DrawRect(screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{33, 50, 15, 255})
-	}
-
-	// Draw food
-	ebitenutil.DrawRect(screen, float64(g.food.Position.X*tileSize), float64(g.food.Position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255})
-
-	// Create a font.Face
-	face := basicfont.Face7x13
-
-	// Draw score
-	scoreText := fmt.Sprintf("Score: %d", g.score)
-	text.Draw(screen, scoreText, face, 5, screenHeight-5, color.White)
-
-	// Draw game over text
-	if g.gameOver {
-		text.Draw(screen, "Game Over", face, screenWidth/2-40, screenHeight/2, color.White)
-		text.Draw(screen, "Press 'R' to restart", face, screenWidth/2-60, screenHeight/2+16, color.White)
-	}
-
-	// Draw game won text
-	if g.gameWon {
-		text.Draw(screen, "You Won!", face, screenWidth/2-40, screenHeight/2, color.White)
-		text.Draw(screen, "Press 'R' to restart", face, screenWidth/2-60, screenHeight/2+16, color.White)
-	}
+	g.renderer.screen = screen
+	g.renderer.drawBackground()
+	g.renderer.drawSnake(g.snake.Body)
+	g.renderer.drawFood(g.food.Position)
+	g.renderer.drawUI(g.logic.score, g.logic.gameOver, g.logic.gameWon)
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 320, 240
+func (g *Game) Layout(_, _ int) (int, int) {
+	return screenWidth, screenHeight
+}
+
+func (g *Game) restart() {
+	g.snake = NewSnake()
+	g.food = NewFood()
+	g.logic = NewGameLogic()
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	game := &Game{
 		snake:    NewSnake(),
 		food:     NewFood(),
-		gameOver: false,
-		gameWon:  false,
-		ticks:    0,
-		speed:    10,
+		renderer: NewRenderer(),
+		logic:    NewGameLogic(),
 	}
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("GoSnake")
@@ -157,24 +102,29 @@ func main() {
 	}
 }
 
-// Function to create a Snake
 func NewSnake() *Snake {
 	return &Snake{
-		Body: []Point{
-			{X: screenWidth / tileSize / 2, Y: screenHeight / tileSize / 2},
-		},
+		Body:      []Point{{X: screenWidth / tileSize / 2, Y: screenHeight / tileSize / 2}},
 		Direction: Point{X: 1, Y: 0},
 	}
 }
 
-// Function to move the Snake
-func (s *Snake) Move() {
-	newHead := Point{
-		X: s.Body[0].X + s.Direction.X,
-		Y: s.Body[0].Y + s.Direction.Y,
+func (s *Snake) updateDirection() {
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) && s.Direction.X == 0 {
+		s.Direction = Point{X: -1, Y: 0}
+	} else if ebiten.IsKeyPressed(ebiten.KeyRight) && s.Direction.X == 0 {
+		s.Direction = Point{X: 1, Y: 0}
+	} else if ebiten.IsKeyPressed(ebiten.KeyUp) && s.Direction.Y == 0 {
+		s.Direction = Point{X: 0, Y: -1}
+	} else if ebiten.IsKeyPressed(ebiten.KeyDown) && s.Direction.Y == 0 {
+		s.Direction = Point{X: 0, Y: 1}
 	}
-	s.Body = append([]Point{newHead}, s.Body...)
+	s.Move()
+}
 
+func (s *Snake) Move() {
+	newHead := Point{X: s.Body[0].X + s.Direction.X, Y: s.Body[0].Y + s.Direction.Y}
+	s.Body = append([]Point{newHead}, s.Body...)
 	if s.GrowCounter > 0 {
 		s.GrowCounter--
 	} else {
@@ -182,13 +132,106 @@ func (s *Snake) Move() {
 	}
 }
 
-// Function to create the Food
 func NewFood() *Food {
 	return &Food{
-		Position: Point{
-			X: rand.Intn(screenWidth / tileSize),
-			Y: rand.Intn(screenHeight / tileSize),
-		},
+		Position: Point{X: rand.Intn(screenWidth / tileSize), Y: rand.Intn(screenHeight / tileSize)},
+	}
+}
+
+func NewRenderer() *Renderer {
+	return &Renderer{
+		face: NewFaceWrapper(*basicfont.Face7x13),
+	}
+}
+
+type FaceWrapper struct {
+	basicfont.Face
+}
+
+func NewFaceWrapper(face basicfont.Face) font.Face {
+	return &FaceWrapper{Face: face}
+}
+
+func (fw *FaceWrapper) Close() error {
+	return nil
+}
+
+func (r *Renderer) drawBackground() {
+	r.screen.Fill(color.RGBA{154, 198, 0, 255})
+}
+
+func (r *Renderer) drawSnake(body []Point) {
+	for _, p := range body {
+		ebitenutil.DrawRect(r.screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{33, 50, 15, 255}) // Snake color
+	}
+}
+
+func (r *Renderer) drawFood(position Point) {
+	ebitenutil.DrawRect(r.screen, float64(position.X*tileSize), float64(position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255}) // Food color
+}
+
+func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool) {
+	scoreText := fmt.Sprintf("Score: %d", score)
+	text.Draw(r.screen, scoreText, r.face, 5, screenHeight-5, color.White)
+	if gameOver {
+		text.Draw(r.screen, "Game Over", r.face, screenWidth/2-40, screenHeight/2, color.White)
+		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
+	}
+	if gameWon {
+		text.Draw(r.screen, "You Won!", r.face, screenWidth/2-40, screenHeight/2, color.White)
+		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
+	}
+}
+
+func NewGameLogic() *GameLogic {
+	return &GameLogic{speed: 10}
+}
+
+func (gl *GameLogic) HandleGameState(restartPressed bool) bool {
+	if gl.gameOver || gl.gameWon {
+		return restartPressed
+	}
+	return false
+}
+
+func (gl *GameLogic) UpdateTick() bool {
+	gl.updateCounter++
+	if gl.updateCounter < gl.speed {
+		return false
+	}
+	gl.updateCounter = 0
+	return true
+}
+
+func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
+	head := snake.Body[0]
+	if head.X < 0 || head.Y < 0 || head.X >= screenWidth/tileSize || head.Y >= screenHeight/tileSize {
+		gl.gameOver = true
+		gl.speed = 10
+		return
+	}
+
+	for _, part := range snake.Body[1:] {
+		if head.X == part.X && head.Y == part.Y {
+			gl.gameOver = true
+			gl.speed = 10
+			return
+		}
+	}
+
+	if head.X == food.Position.X && head.Y == food.Position.Y {
+		gl.score++
+		snake.GrowCounter += 1
+		*food = *NewFood()
+
+		if gl.score == 25 {
+			gl.gameWon = true
+			gl.speed = 10
+		} else {
+			if gl.speed > 2 {
+				gl.speed--
+			}
+		}
 	}
 }
 
