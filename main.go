@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
 const (
@@ -130,22 +129,4 @@ func main() {
 	if err := ebiten.RunGame(gameManager); err != nil {
 		log.Fatal(err)
 	}
-}
-
-type GameStartManager struct {
-	gameStart bool
-}
-
-func NewGameStartManager() *GameStartManager {
-	return &GameStartManager{}
-}
-
-func (gsm *GameStartManager) HandleStartInput() {
-	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-		gsm.gameStart = true
-	}
-}
-
-func (gsm *GameStartManager) IsGameStarted() bool {
-	return gsm.gameStart
 }
