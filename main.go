@@ -230,16 +230,6 @@ func (s *Snake) Move() {
 	}
 }
 
-type Food struct {
-	Position Point
-}
-
-func NewFood() *Food {
-	return &Food{
-		Position: Point{X: rand.Intn(screenWidth / tileSize), Y: rand.Intn(screenHeight / tileSize)},
-	}
-}
-
 type Renderer struct {
 	screen *ebiten.Image
 	face   font.Face
