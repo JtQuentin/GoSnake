@@ -49,6 +49,10 @@ func (gm *GameManager) Update(screen *ebiten.Image) error {
 		gm.game.restart()
 	}
 
+	if gm.game.logic.HandleGameState(inpututil.IsKeyJustPressed(ebiten.KeyR)) {
+		return nil
+	}
+
 	if gm.game.logic.UpdateTick() {
 		gm.game.snake.updateDirection()
 		gm.game.logic.CheckCollisions(gm.game.snake, gm.game.food)
@@ -213,9 +217,21 @@ func NewGameLogic() *GameLogic {
 
 func (gl *GameLogic) HandleGameState(restartPressed bool) bool {
 	if gl.gameOver || gl.gameWon {
-		return restartPressed
+		if restartPressed {
+			gl.restartGame()
+			return false
+		}
+		return true
 	}
 	return false
+}
+
+func (gl *GameLogic) restartGame() {
+	gl.score = 0
+	gl.gameOver = false
+	gl.gameWon = false
+	gl.speed = 10
+	gl.updateCounter = 0
 }
 
 func (gl *GameLogic) UpdateTick() bool {
