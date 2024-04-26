@@ -10,6 +10,7 @@ type Game struct {
 	renderer     *Renderer
 	logic        *GameLogic
 	startManager *GameStartManager
+	pauseManager *GamePauseManager
 }
 
 type Drawable interface {
@@ -20,13 +21,14 @@ type Updatable interface {
 	Update() error
 }
 
-func NewGame(snake *Snake, food *Food, renderer *Renderer, logic *GameLogic, startManager *GameStartManager) *Game {
+func NewGame(snake *Snake, food *Food, renderer *Renderer, logic *GameLogic, startManager *GameStartManager, pauseManager *GamePauseManager) *Game {
 	return &Game{
 		snake:        snake,
 		food:         food,
 		renderer:     renderer,
 		logic:        logic,
 		startManager: startManager,
+		pauseManager: pauseManager,
 	}
 }
 
@@ -35,7 +37,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.renderer.drawBackground()
 	g.renderer.drawSnake(g.snake.Body)
 	g.renderer.drawFood(g.food.Position)
-	g.renderer.drawUI(g.logic.score, g.logic.gameOver, g.logic.gameWon, g.startManager.IsGameStarted())
+	gm := NewGameManager(g, g.startManager, g.pauseManager)
+	g.renderer.drawUI(g.logic.score, g.logic.gameOver, g.logic.gameWon, g.startManager.IsGameStarted(), gm.gamePaused)
 }
 
 func (g *Game) Layout(_, _ int) (int, int) {

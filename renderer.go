@@ -37,16 +37,26 @@ func (r *Renderer) drawFood(position Point) {
 	ebitenutil.DrawRect(r.screen, float64(position.X*tileSize), float64(position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255})
 }
 
-func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool, gameStarted bool) {
+func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool, gameStarted bool, gamePaused bool) {
 	scoreText := fmt.Sprintf("Score: %d", score)
 	text.Draw(r.screen, scoreText, r.face, 5, screenHeight-5, color.White)
 
 	if !gameStarted {
-		text.Draw(r.screen, "Press 'SPACE' to start the game", r.face, screenWidth/2-100, screenHeight/2, color.White)
+		startText := "Press 'SPACE' to start the game"
+		startTextWidth := text.BoundString(r.face, startText).Dx()
+		x := (screenWidth - startTextWidth) / 2
+		text.Draw(r.screen, startText, r.face, x, screenHeight/2, color.White)
 	} else {
 		if gameOver {
-			text.Draw(r.screen, "Game Over", r.face, screenWidth/2-40, screenHeight/2, color.White)
-			text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
+			gameOverText := "Game Over"
+			gameOverTextWidth := text.BoundString(r.face, gameOverText).Dx()
+			x := (screenWidth - gameOverTextWidth) / 2
+			text.Draw(r.screen, gameOverText, r.face, x, screenHeight/2, color.White)
+
+			restartText := "Press 'R' to restart"
+			restartTextWidth := text.BoundString(r.face, restartText).Dx()
+			x = (screenWidth - restartTextWidth) / 2
+			text.Draw(r.screen, restartText, r.face, x, screenHeight/2+16, color.White)
 			scores, err := LoadScores()
 			if err == nil {
 				startY := screenHeight/2 + 32
@@ -63,8 +73,27 @@ func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool, gameStarted bo
 		}
 
 		if gameWon {
-			text.Draw(r.screen, "You Won!", r.face, screenWidth/2-40, screenHeight/2, color.White)
-			text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
+			gameOverText := "You Won!"
+			gameOverTextWidth := text.BoundString(r.face, gameOverText).Dx()
+			x := (screenWidth - gameOverTextWidth) / 2
+			text.Draw(r.screen, gameOverText, r.face, x, screenHeight/2, color.White)
+
+			restartText := "Press 'R' to restart"
+			restartTextWidth := text.BoundString(r.face, restartText).Dx()
+			x = (screenWidth - restartTextWidth) / 2
+			text.Draw(r.screen, restartText, r.face, x, screenHeight/2+16, color.White)
+		}
+
+		if gamePaused {
+			pausedText := "You paused the game"
+			pausedTextWidth := text.BoundString(r.face, pausedText).Dx()
+			x := (screenWidth - pausedTextWidth) / 2
+			text.Draw(r.screen, pausedText, r.face, x, screenHeight/2-16, color.White)
+
+			resumeText := "Press 'P' to resume"
+			resumeTextWidth := text.BoundString(r.face, resumeText).Dx()
+			x = (screenWidth - resumeTextWidth) / 2
+			text.Draw(r.screen, resumeText, r.face, x, screenHeight/2, color.White)
 		}
 	}
 }
