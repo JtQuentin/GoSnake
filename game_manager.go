@@ -9,6 +9,7 @@ type GameManager struct {
 	game         *Game
 	startManager *GameStartManager
 	pauseManager *GamePauseManager
+	gamePaused   bool
 }
 
 func NewGameManager(game *Game, startManager *GameStartManager, pauseManager *GamePauseManager) *GameManager {
@@ -27,7 +28,8 @@ func (gm *GameManager) Update(screen *ebiten.Image) error {
 	}
 
 	gm.pauseManager.HandlePauseInput()
-	if gm.pauseManager.IsGamePaused() {
+	gm.gamePaused = gm.pauseManager.IsGamePaused()
+	if gm.gamePaused {
 		return nil
 	}
 
@@ -51,7 +53,7 @@ func (gm *GameManager) Update(screen *ebiten.Image) error {
 
 func (gm *GameManager) Draw(screen *ebiten.Image) {
 	gm.game.Draw(screen)
-	gm.game.renderer.drawUI(gm.game.logic.score, gm.game.logic.gameOver, gm.game.logic.gameWon, gm.startManager.IsGameStarted())
+	gm.game.renderer.drawUI(gm.game.logic.score, gm.game.logic.gameOver, gm.game.logic.gameWon, gm.startManager.IsGameStarted(), gm.gamePaused)
 }
 
 func (gm *GameManager) Layout(outsideWidth, outsideHeight int) (int, int) {

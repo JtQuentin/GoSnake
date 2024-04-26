@@ -23,7 +23,7 @@ func main() {
 	logic := NewGameLogic()
 	gameStartManager := NewGameStartManager()
 	gamePauseManager := NewGamePauseManager()
-	game := NewGame(snake, food, renderer, logic, gameStartManager)
+	game := NewGame(snake, food, renderer, logic, gameStartManager, gamePauseManager)
 	gameManager := NewGameManager(game, gameStartManager, gamePauseManager)
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
