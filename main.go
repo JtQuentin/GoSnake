@@ -8,7 +8,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/inpututil"
 	"github.com/hajimehoshi/ebiten/text"
 	"golang.org/x/image/font/basicfont"
 )
@@ -48,13 +47,6 @@ type Food struct {
 // Function to update the Snake's position
 func (g *Game) Update(screen *ebiten.Image) error {
 
-	if g.gameOver || g.gameWon {
-		if inpututil.IsKeyJustPressed(ebiten.KeyR) {
-			g.restart()
-		}
-		return nil
-	}
-
 	g.updateCounter++
 	if g.updateCounter < g.speed {
 		return nil
@@ -91,14 +83,8 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		g.snake.GrowCounter += 1
 		g.food = NewFood()
 
-		if g.score == 25 {
-			g.gameWon = true
-			g.speed = 10
-		} else {
-
-			if g.speed > 2 {
-				g.speed--
-			}
+		if g.speed > 2 {
+			g.speed--
 		}
 	}
 
@@ -123,18 +109,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw score
 	scoreText := fmt.Sprintf("Score: %d", g.score)
 	text.Draw(screen, scoreText, face, 5, screenHeight-5, color.White)
-
-	// Draw game over text
-	if g.gameOver {
-		text.Draw(screen, "Game Over", face, screenWidth/2-40, screenHeight/2, color.White)
-		text.Draw(screen, "Press 'R' to restart", face, screenWidth/2-60, screenHeight/2+16, color.White)
-	}
-
-	// Draw game won text
-	if g.gameWon {
-		text.Draw(screen, "You Won!", face, screenWidth/2-40, screenHeight/2, color.White)
-		text.Draw(screen, "Press 'R' to restart", face, screenWidth/2-60, screenHeight/2+16, color.White)
-	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -190,13 +164,4 @@ func NewFood() *Food {
 			Y: rand.Intn(screenHeight / tileSize),
 		},
 	}
-}
-
-func (g *Game) restart() {
-	g.snake = NewSnake()
-	g.score = 0
-	g.gameOver = false
-	g.gameWon = false
-	g.food = NewFood()
-	g.speed = 10
 }
