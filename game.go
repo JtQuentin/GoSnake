@@ -11,6 +11,7 @@ type Game struct {
 	logic        *GameLogic
 	startManager *GameStartManager
 	pauseManager *GamePauseManager
+	audioManager *AudioManager
 }
 
 type Drawable interface {
@@ -48,5 +49,5 @@ func (g *Game) Layout(_, _ int) (int, int) {
 func (g *Game) restart() {
 	g.snake = NewSnake()
 	g.food = NewFood()
-	g.logic = NewGameLogic()
+	g.logic = NewGameLogic(g.audioManager)
 }
