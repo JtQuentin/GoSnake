@@ -47,6 +47,12 @@ type Food struct {
 // Function to update the Snake's position
 func (g *Game) Update(screen *ebiten.Image) error {
 
+	g.updateCounter++
+	if g.updateCounter < g.speed {
+		return nil
+	}
+	g.updateCounter = 0
+
 	g.snake.Move()
 
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) && g.snake.Direction.X == 0 {
@@ -57,6 +63,29 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		g.snake.Direction = Point{X: 0, Y: -1}
 	} else if ebiten.IsKeyPressed(ebiten.KeyDown) && g.snake.Direction.Y == 0 {
 		g.snake.Direction = Point{X: 0, Y: 1}
+	}
+
+	head := g.snake.Body[0]
+	if head.X < 0 || head.Y < 0 || head.X >= screenWidth/tileSize || head.Y >= screenHeight/tileSize {
+		g.gameOver = true
+		g.speed = 10
+	}
+
+	for _, part := range g.snake.Body[1:] {
+		if head.X == part.X && head.Y == part.Y {
+			g.gameOver = true
+			g.speed = 10
+		}
+	}
+
+	if head.X == g.food.Position.X && head.Y == g.food.Position.Y {
+		g.score++
+		g.snake.GrowCounter += 1
+		g.food = NewFood()
+
+		if g.speed > 2 {
+			g.speed--
+		}
 	}
 
 	return nil
