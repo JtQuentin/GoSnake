@@ -200,9 +200,9 @@ func (s *Snake) updateDirection() {
 		s.Direction = Point{X: -1, Y: 0}
 	} else if (ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)) && s.Direction.X == 0 {
 		s.Direction = Point{X: 1, Y: 0}
-	} else if (ebiten.IsKeyPressed(ebiten.KeyW)  || ebiten.IsKeyPressed(ebiten.KeyUp)) && s.Direction.Y == 0 {
+	} else if (ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)) && s.Direction.Y == 0 {
 		s.Direction = Point{X: 0, Y: -1}
-	} else if (ebiten.IsKeyPressed(ebiten.KeyS)  || ebiten.IsKeyPressed(ebiten.KeyDown)) && s.Direction.Y == 0 {
+	} else if (ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)) && s.Direction.Y == 0 {
 		s.Direction = Point{X: 0, Y: 1}
 	}
 	s.Move()
@@ -265,9 +265,9 @@ func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool, gameStarted bo
 			text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
 			scores, err := LoadScores()
 			if err == nil {
-				startY := screenHeight/2 + 32 
+				startY := screenHeight/2 + 32
 				for i, entry := range scores {
-					if i >= 5 { 
+					if i >= 5 {
 						break
 					}
 					scoreLine := fmt.Sprintf("%d. %s: %d", i+1, entry.Name, entry.Score)
@@ -369,15 +369,9 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 			gl.gameWon = true
 			gl.speed = 10
 		} else {
-			max := 10
-			min := 0
-			if gl.speed > 5 {
-				gl.speed = gl.speed - (rand.Intn(max-min+1) + min)
-			} else {
-				gl.speed = gl.speed + (rand.Intn(max-min+1) + min)
+			if gl.speed > 2 {
+				gl.speed--
 			}
 		}
-
 	}
 }
-
