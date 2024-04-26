@@ -28,45 +28,43 @@ type Game struct {
 	logic    *GameLogic
 }
 
-type Point struct {
-	X, Y int
+type Drawable interface {
+	Draw(screen *ebiten.Image)
 }
 
-type Snake struct {
-	Body        []Point
-	Direction   Point
-	GrowCounter int
+type Updatable interface {
+	Update() error
 }
 
-type Food struct {
-	Position Point
+type GameManager struct {
+	game *Game
 }
 
-type Renderer struct {
-	screen *ebiten.Image
-	face   font.Face
+func NewGameManager(game *Game) *GameManager {
+	return &GameManager{game: game}
 }
 
-type GameLogic struct {
-	score         int
-	gameOver      bool
-	gameWon       bool
-	speed         int
-	updateCounter int
-}
-
-func (g *Game) Update(screen *ebiten.Image) error {
-	if g.logic.HandleGameState(inpututil.IsKeyJustPressed(ebiten.KeyR)) {
-		g.restart()
-		return nil
+func (gm *GameManager) Update(screen *ebiten.Image) error {
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		gm.game.restart()
 	}
 
-	if g.logic.UpdateTick() {
-		g.snake.updateDirection()
-		g.logic.CheckCollisions(g.snake, g.food)
+	if gm.game.logic.UpdateTick() {
+		gm.game.snake.updateDirection()
+		gm.game.logic.CheckCollisions(gm.game.snake, gm.game.food)
 	}
+
+	gm.game.Draw(screen)
 
 	return nil
+}
+
+func (gm *GameManager) Draw(screen *ebiten.Image) {
+	gm.game.Draw(screen)
+}
+
+func (gm *GameManager) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -87,19 +85,40 @@ func (g *Game) restart() {
 	g.logic = NewGameLogic()
 }
 
+func NewGame(snake *Snake, food *Food, renderer *Renderer, logic *GameLogic) *Game {
+	return &Game{
+		snake:    snake,
+		food:     food,
+		renderer: renderer,
+		logic:    logic,
+	}
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	game := &Game{
-		snake:    NewSnake(),
-		food:     NewFood(),
-		renderer: NewRenderer(),
-		logic:    NewGameLogic(),
-	}
+
+	snake := NewSnake()
+	food := NewFood()
+	renderer := NewRenderer()
+	logic := NewGameLogic()
+	game := NewGame(snake, food, renderer, logic)
+	gameManager := NewGameManager(game)
+
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("GoSnake")
-	if err := ebiten.RunGame(game); err != nil {
+	if err := ebiten.RunGame(gameManager); err != nil {
 		log.Fatal(err)
 	}
+}
+
+type Point struct {
+	X, Y int
+}
+
+type Snake struct {
+	Body        []Point
+	Direction   Point
+	GrowCounter int
 }
 
 func NewSnake() *Snake {
@@ -132,28 +151,25 @@ func (s *Snake) Move() {
 	}
 }
 
+type Food struct {
+	Position Point
+}
+
 func NewFood() *Food {
 	return &Food{
 		Position: Point{X: rand.Intn(screenWidth / tileSize), Y: rand.Intn(screenHeight / tileSize)},
 	}
 }
 
+type Renderer struct {
+	screen *ebiten.Image
+	face   font.Face
+}
+
 func NewRenderer() *Renderer {
 	return &Renderer{
-		face: NewFaceWrapper(*basicfont.Face7x13),
+		face: basicfont.Face7x13,
 	}
-}
-
-type FaceWrapper struct {
-	basicfont.Face
-}
-
-func NewFaceWrapper(face basicfont.Face) font.Face {
-	return &FaceWrapper{Face: face}
-}
-
-func (fw *FaceWrapper) Close() error {
-	return nil
 }
 
 func (r *Renderer) drawBackground() {
@@ -162,12 +178,12 @@ func (r *Renderer) drawBackground() {
 
 func (r *Renderer) drawSnake(body []Point) {
 	for _, p := range body {
-		ebitenutil.DrawRect(r.screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{33, 50, 15, 255}) // Snake color
+		ebitenutil.DrawRect(r.screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{33, 50, 15, 255})
 	}
 }
 
 func (r *Renderer) drawFood(position Point) {
-	ebitenutil.DrawRect(r.screen, float64(position.X*tileSize), float64(position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255}) // Food color
+	ebitenutil.DrawRect(r.screen, float64(position.X*tileSize), float64(position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255})
 }
 
 func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool) {
@@ -181,6 +197,14 @@ func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool) {
 		text.Draw(r.screen, "You Won!", r.face, screenWidth/2-40, screenHeight/2, color.White)
 		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
 	}
+}
+
+type GameLogic struct {
+	score         int
+	gameOver      bool
+	gameWon       bool
+	speed         int
+	updateCounter int
 }
 
 func NewGameLogic() *GameLogic {
@@ -233,13 +257,4 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 			}
 		}
 	}
-}
-
-func (g *Game) restart() {
-	g.snake = NewSnake()
-	g.score = 0
-	g.gameOver = false
-	g.gameWon = false
-	g.food = NewFood()
-	g.speed = 10
 }
