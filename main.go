@@ -7,11 +7,6 @@ import (
 	"math/rand"
 	"time"
 
-	"bufio"
-
-    "os"
-    "sort"
-    "strings"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
@@ -26,68 +21,94 @@ const (
 	tileSize     = 5
 )
 
+type GameEntity interface {
+	Update()
+	Draw(screen *ebiten.Image)
+}
+
+type EntityFactory interface {
+	NewSnake() *Snake
+	NewFood() *Food
+	NewRenderer() *Renderer
+	NewGameLogic() *GameLogic
+}
+
+type ConcreteFactory struct{}
+
+func (f *ConcreteFactory) NewSnake() *Snake {
+	return NewSnake()
+}
+
+func (f *ConcreteFactory) NewFood() *Food {
+	return NewFood()
+}
+
+func (f *ConcreteFactory) NewRenderer() *Renderer {
+	return NewRenderer()
+}
+
+func (f *ConcreteFactory) NewGameLogic() *GameLogic {
+	return NewGameLogic()
+}
+
+type GameEntityController struct {
+	snake *Snake
+	food  *Food
+}
+
+func NewGameEntityController(factory EntityFactory) *GameEntityController {
+	return &GameEntityController{
+		snake: factory.NewSnake(),
+		food:  factory.NewFood(),
+	}
+}
+
+func (controller *GameEntityController) Update() {
+	controller.snake.updateDirection()
+	controller.food.Update()
+}
+
+func (controller *GameEntityController) Draw(screen *ebiten.Image) {
+	controller.snake.Draw(screen)
+	controller.food.Draw(screen)
+}
+
 type Game struct {
-	snake    *Snake
-	food     *Food
+	entities *GameEntityController
 	renderer *Renderer
 	logic    *GameLogic
 }
 
-type Drawable interface {
-	Draw(screen *ebiten.Image)
+func NewGame(factory EntityFactory) *Game {
+	renderer := factory.NewRenderer()
+	logic := factory.NewGameLogic()
+	entities := NewGameEntityController(factory)
+	return &Game{
+		entities: entities,
+		renderer: renderer,
+		logic:    logic,
+	}
 }
 
-type Updatable interface {
-	Update() error
+func (g *Game) Update() error {
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		g.restart()
+	}
+	if g.logic.UpdateTick() {
+		g.entities.Update()
+		g.logic.CheckCollisions(g.entities.snake, g.entities.food)
+	}
+	return nil
 }
 
-type ScoreEntry struct {
-    Name  string
-    Score int
+func (g *Game) Draw(screen *ebiten.Image) {
+	g.renderer.Draw(screen, g.entities.snake.Body, g.entities.food.Position, g.logic.score, g.logic.gameOver, g.logic.gameWon)
 }
 
-// SaveScore saves the current score to a file
-func SaveScore(score int) error {
-    file, err := os.OpenFile("scores.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        return err
-    }
-    defer file.Close()
-
-    // Example: Save with a placeholder name and score
-    _, err = file.WriteString(fmt.Sprintf("Player: %d\n", score))
-    return err
+func (g *Game) restart() {
+	factory := &ConcreteFactory{}
+	*g = *NewGame(factory)
 }
-
-// LoadScores loads scores from a file and returns a sorted slice of ScoreEntry
-func LoadScores() ([]ScoreEntry, error) {
-    file, err := os.Open("scores.txt")
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
-
-    var scores []ScoreEntry
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        line := scanner.Text()
-        parts := strings.Split(line, ": ")
-        if len(parts) == 2 {
-            // Assuming the score is always an integer
-            var score int
-            fmt.Sscanf(parts[1], "%d", &score)
-            scores = append(scores, ScoreEntry{Name: parts[0], Score: score})
-        }
-    }
-
-    // Sort scores in descending order
-    sort.Slice(scores, func(i, j int) bool {
-        return scores[i].Score > scores[j].Score
-    })
-
-    return scores, scanner.Err()
-}
-
 
 type GameManager struct {
 	game *Game
@@ -98,67 +119,18 @@ func NewGameManager(game *Game) *GameManager {
 }
 
 func (gm *GameManager) Update(screen *ebiten.Image) error {
-	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
-		gm.game.restart()
-	}
-
-	if gm.game.logic.HandleGameState(inpututil.IsKeyJustPressed(ebiten.KeyR)) {
-		return nil
-	}
-
-	if gm.game.logic.UpdateTick() {
-		gm.game.snake.updateDirection()
-		gm.game.logic.CheckCollisions(gm.game.snake, gm.game.food)
-	}
-
-	gm.game.Draw(screen)
-
-	return nil
+	return gm.game.Update()
 }
 
 func (gm *GameManager) Draw(screen *ebiten.Image) {
 	gm.game.Draw(screen)
 }
 
-func (gm *GameManager) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
-}
-
-func (g *Game) Draw(screen *ebiten.Image) {
-	g.renderer.screen = screen
-	g.renderer.drawBackground()
-	g.renderer.drawSnake(g.snake.Body)
-	g.renderer.drawFood(g.food.Position)
-	g.renderer.drawUI(g.logic.score, g.logic.gameOver, g.logic.gameWon)
-}
-
-func (g *Game) Layout(_, _ int) (int, int) {
-	return screenWidth, screenHeight
-}
-
-func (g *Game) restart() {
-	g.snake = NewSnake()
-	g.food = NewFood()
-	g.logic = NewGameLogic()
-}
-
-func NewGame(snake *Snake, food *Food, renderer *Renderer, logic *GameLogic) *Game {
-	return &Game{
-		snake:    snake,
-		food:     food,
-		renderer: renderer,
-		logic:    logic,
-	}
-}
-
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	snake := NewSnake()
-	food := NewFood()
-	renderer := NewRenderer()
-	logic := NewGameLogic()
-	game := NewGame(snake, food, renderer, logic)
+	factory := &ConcreteFactory{}
+	game := NewGame(factory)
 	gameManager := NewGameManager(game)
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
@@ -208,6 +180,16 @@ func (s *Snake) Move() {
 	}
 }
 
+func (gm *GameManager) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
+}
+
+func (s *Snake) Draw(screen *ebiten.Image) {
+	for _, p := range s.Body {
+		ebitenutil.DrawRect(screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{33, 50, 15, 255})
+	}
+}
+
 type Food struct {
 	Position Point
 }
@@ -216,6 +198,13 @@ func NewFood() *Food {
 	return &Food{
 		Position: Point{X: rand.Intn(screenWidth / tileSize), Y: rand.Intn(screenHeight / tileSize)},
 	}
+}
+
+func (f *Food) Update() {
+}
+
+func (f *Food) Draw(screen *ebiten.Image) {
+	ebitenutil.DrawRect(screen, float64(f.Position.X*tileSize), float64(f.Position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255})
 }
 
 type Renderer struct {
@@ -227,6 +216,14 @@ func NewRenderer() *Renderer {
 	return &Renderer{
 		face: basicfont.Face7x13,
 	}
+}
+
+func (r *Renderer) Draw(screen *ebiten.Image, body []Point, position Point, score int, gameOver bool, gameWon bool) {
+	r.screen = screen
+	r.drawBackground()
+	r.drawSnake(body)
+	r.drawFood(position)
+	r.drawUI(score, gameOver, gameWon)
 }
 
 func (r *Renderer) drawBackground() {
@@ -249,21 +246,7 @@ func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool) {
 	if gameOver {
 		text.Draw(r.screen, "Game Over", r.face, screenWidth/2-40, screenHeight/2, color.White)
 		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
-        scores, err := LoadScores()
-        if err == nil {
-            startY := screenHeight/2 + 32 // Start a bit below the "Press 'R' to restart" message
-            for i, entry := range scores {
-                if i >= 5 { // Display top 5 scores
-                    break
-                }
-                scoreLine := fmt.Sprintf("%d. %s: %d", i+1, entry.Name, entry.Score)
-                text.Draw(r.screen, scoreLine, r.face, screenWidth/2-60, startY+(i*16), color.White)
-            }
-        } else {
-            log.Printf("Error loading scores: %v", err)
-        }
-    }
-	
+	}
 	if gameWon {
 		text.Draw(r.screen, "You Won!", r.face, screenWidth/2-40, screenHeight/2, color.White)
 		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
@@ -284,21 +267,9 @@ func NewGameLogic() *GameLogic {
 
 func (gl *GameLogic) HandleGameState(restartPressed bool) bool {
 	if gl.gameOver || gl.gameWon {
-		if restartPressed {
-			gl.restartGame()
-			return false
-		}
-		return true
+		return restartPressed
 	}
 	return false
-}
-
-func (gl *GameLogic) restartGame() {
-	gl.score = 0
-	gl.gameOver = false
-	gl.gameWon = false
-	gl.speed = 10
-	gl.updateCounter = 0
 }
 
 func (gl *GameLogic) UpdateTick() bool {
@@ -315,7 +286,6 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 	if head.X < 0 || head.Y < 0 || head.X >= screenWidth/tileSize || head.Y >= screenHeight/tileSize {
 		gl.gameOver = true
 		gl.speed = 10
-		SaveScore(gl.score)
 		return
 	}
 
