@@ -9,9 +9,10 @@ import (
 
 	"bufio"
 
-    "os"
-    "sort"
-    "strings"
+	"os"
+	"sort"
+	"strings"
+
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
@@ -27,10 +28,11 @@ const (
 )
 
 type Game struct {
-	snake    *Snake
-	food     *Food
-	renderer *Renderer
-	logic    *GameLogic
+	snake        *Snake
+	food         *Food
+	renderer     *Renderer
+	logic        *GameLogic
+	startManager *GameStartManager
 }
 
 type Drawable interface {
@@ -42,67 +44,72 @@ type Updatable interface {
 }
 
 type ScoreEntry struct {
-    Name  string
-    Score int
+	Name  string
+	Score int
 }
 
 // SaveScore saves the current score to a file
 func SaveScore(score int) error {
-    file, err := os.OpenFile("scores.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        return err
-    }
-    defer file.Close()
+	file, err := os.OpenFile("scores.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 
-    // Example: Save with a placeholder name and score
-    _, err = file.WriteString(fmt.Sprintf("Player: %d\n", score))
-    return err
+	// Example: Save with a placeholder name and score
+	_, err = file.WriteString(fmt.Sprintf("Player: %d\n", score))
+	return err
 }
 
 // LoadScores loads scores from a file and returns a sorted slice of ScoreEntry
 func LoadScores() ([]ScoreEntry, error) {
-    file, err := os.Open("scores.txt")
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
+	file, err := os.Open("scores.txt")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-    var scores []ScoreEntry
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        line := scanner.Text()
-        parts := strings.Split(line, ": ")
-        if len(parts) == 2 {
-            // Assuming the score is always an integer
-            var score int
-            fmt.Sscanf(parts[1], "%d", &score)
-            scores = append(scores, ScoreEntry{Name: parts[0], Score: score})
-        }
-    }
+	var scores []ScoreEntry
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, ": ")
+		if len(parts) == 2 {
+			// Assuming the score is always an integer
+			var score int
+			fmt.Sscanf(parts[1], "%d", &score)
+			scores = append(scores, ScoreEntry{Name: parts[0], Score: score})
+		}
+	}
 
-    // Sort scores in descending order
-    sort.Slice(scores, func(i, j int) bool {
-        return scores[i].Score > scores[j].Score
-    })
+	// Sort scores in descending order
+	sort.Slice(scores, func(i, j int) bool {
+		return scores[i].Score > scores[j].Score
+	})
 
-    return scores, scanner.Err()
+	return scores, scanner.Err()
 }
-
 
 type GameManager struct {
-	game *Game
+	game         *Game
+	startManager *GameStartManager
 }
 
-func NewGameManager(game *Game) *GameManager {
-	return &GameManager{game: game}
+func NewGameManager(game *Game, startManager *GameStartManager) *GameManager {
+	return &GameManager{game: game, startManager: startManager}
 }
 
 func (gm *GameManager) Update(screen *ebiten.Image) error {
+	if !gm.startManager.IsGameStarted() {
+		gm.startManager.HandleStartInput()
+		return nil
+	}
+
 	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
 		gm.game.restart()
 	}
 
-	if gm.game.logic.HandleGameState(inpututil.IsKeyJustPressed(ebiten.KeyR)) {
+	if gm.game.logic.HandleGameState(inpututil.IsKeyJustPressed(ebiten.KeyR), gm.startManager.IsGameStarted()) {
 		return nil
 	}
 
@@ -118,6 +125,7 @@ func (gm *GameManager) Update(screen *ebiten.Image) error {
 
 func (gm *GameManager) Draw(screen *ebiten.Image) {
 	gm.game.Draw(screen)
+	gm.game.renderer.drawUI(gm.game.logic.score, gm.game.logic.gameOver, gm.game.logic.gameWon, gm.startManager.IsGameStarted())
 }
 
 func (gm *GameManager) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -129,7 +137,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.renderer.drawBackground()
 	g.renderer.drawSnake(g.snake.Body)
 	g.renderer.drawFood(g.food.Position)
-	g.renderer.drawUI(g.logic.score, g.logic.gameOver, g.logic.gameWon)
+	g.renderer.drawUI(g.logic.score, g.logic.gameOver, g.logic.gameWon, g.startManager.IsGameStarted())
 }
 
 func (g *Game) Layout(_, _ int) (int, int) {
@@ -142,12 +150,13 @@ func (g *Game) restart() {
 	g.logic = NewGameLogic()
 }
 
-func NewGame(snake *Snake, food *Food, renderer *Renderer, logic *GameLogic) *Game {
+func NewGame(snake *Snake, food *Food, renderer *Renderer, logic *GameLogic, startManager *GameStartManager) *Game {
 	return &Game{
-		snake:    snake,
-		food:     food,
-		renderer: renderer,
-		logic:    logic,
+		snake:        snake,
+		food:         food,
+		renderer:     renderer,
+		logic:        logic,
+		startManager: startManager,
 	}
 }
 
@@ -158,8 +167,9 @@ func main() {
 	food := NewFood()
 	renderer := NewRenderer()
 	logic := NewGameLogic()
-	game := NewGame(snake, food, renderer, logic)
-	gameManager := NewGameManager(game)
+	gameStartManager := NewGameStartManager()
+	game := NewGame(snake, food, renderer, logic, gameStartManager)
+	gameManager := NewGameManager(game, gameStartManager)
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("GoSnake")
@@ -243,30 +253,35 @@ func (r *Renderer) drawFood(position Point) {
 	ebitenutil.DrawRect(r.screen, float64(position.X*tileSize), float64(position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255})
 }
 
-func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool) {
+func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool, gameStarted bool) {
 	scoreText := fmt.Sprintf("Score: %d", score)
 	text.Draw(r.screen, scoreText, r.face, 5, screenHeight-5, color.White)
-	if gameOver {
-		text.Draw(r.screen, "Game Over", r.face, screenWidth/2-40, screenHeight/2, color.White)
-		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
-        scores, err := LoadScores()
-        if err == nil {
-            startY := screenHeight/2 + 32 // Start a bit below the "Press 'R' to restart" message
-            for i, entry := range scores {
-                if i >= 5 { // Display top 5 scores
-                    break
-                }
-                scoreLine := fmt.Sprintf("%d. %s: %d", i+1, entry.Name, entry.Score)
-                text.Draw(r.screen, scoreLine, r.face, screenWidth/2-60, startY+(i*16), color.White)
-            }
-        } else {
-            log.Printf("Error loading scores: %v", err)
-        }
-    }
-	
-	if gameWon {
-		text.Draw(r.screen, "You Won!", r.face, screenWidth/2-40, screenHeight/2, color.White)
-		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
+
+	if !gameStarted {
+		text.Draw(r.screen, "Press 'SPACE' to start the game", r.face, screenWidth/2-100, screenHeight/2, color.White)
+	} else {
+		if gameOver {
+			text.Draw(r.screen, "Game Over", r.face, screenWidth/2-40, screenHeight/2, color.White)
+			text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
+			scores, err := LoadScores()
+			if err == nil {
+				startY := screenHeight/2 + 32 // Start a bit below the "Press 'R' to restart" message
+				for i, entry := range scores {
+					if i >= 5 { // Display top 5 scores
+						break
+					}
+					scoreLine := fmt.Sprintf("%d. %s: %d", i+1, entry.Name, entry.Score)
+					text.Draw(r.screen, scoreLine, r.face, screenWidth/2-60, startY+(i*16), color.White)
+				}
+			} else {
+				log.Printf("Error loading scores: %v", err)
+			}
+		}
+
+		if gameWon {
+			text.Draw(r.screen, "You Won!", r.face, screenWidth/2-40, screenHeight/2, color.White)
+			text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
+		}
 	}
 }
 
@@ -282,8 +297,26 @@ func NewGameLogic() *GameLogic {
 	return &GameLogic{speed: 10}
 }
 
-func (gl *GameLogic) HandleGameState(restartPressed bool) bool {
-	if gl.gameOver || gl.gameWon {
+type GameStartManager struct {
+	gameStart bool
+}
+
+func NewGameStartManager() *GameStartManager {
+	return &GameStartManager{}
+}
+
+func (gsm *GameStartManager) HandleStartInput() {
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		gsm.gameStart = true
+	}
+}
+
+func (gsm *GameStartManager) IsGameStarted() bool {
+	return gsm.gameStart
+}
+
+func (gl *GameLogic) HandleGameState(restartPressed, gameStarted bool) bool {
+	if !gameStarted || gl.gameOver || gl.gameWon {
 		if restartPressed {
 			gl.restartGame()
 			return false
