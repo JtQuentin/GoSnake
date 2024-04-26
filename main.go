@@ -7,6 +7,11 @@ import (
 	"math/rand"
 	"time"
 
+	"bufio"
+
+    "os"
+    "sort"
+    "strings"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
@@ -35,6 +40,54 @@ type Drawable interface {
 type Updatable interface {
 	Update() error
 }
+
+type ScoreEntry struct {
+    Name  string
+    Score int
+}
+
+// SaveScore saves the current score to a file
+func SaveScore(score int) error {
+    file, err := os.OpenFile("scores.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    // Example: Save with a placeholder name and score
+    _, err = file.WriteString(fmt.Sprintf("Player: %d\n", score))
+    return err
+}
+
+// LoadScores loads scores from a file and returns a sorted slice of ScoreEntry
+func LoadScores() ([]ScoreEntry, error) {
+    file, err := os.Open("scores.txt")
+    if err != nil {
+        return nil, err
+    }
+    defer file.Close()
+
+    var scores []ScoreEntry
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+        line := scanner.Text()
+        parts := strings.Split(line, ": ")
+        if len(parts) == 2 {
+            // Assuming the score is always an integer
+            var score int
+            fmt.Sscanf(parts[1], "%d", &score)
+            scores = append(scores, ScoreEntry{Name: parts[0], Score: score})
+        }
+    }
+
+    // Sort scores in descending order
+    sort.Slice(scores, func(i, j int) bool {
+        return scores[i].Score > scores[j].Score
+    })
+
+    return scores, scanner.Err()
+}
+
 
 type GameManager struct {
 	game *Game
@@ -196,7 +249,21 @@ func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool) {
 	if gameOver {
 		text.Draw(r.screen, "Game Over", r.face, screenWidth/2-40, screenHeight/2, color.White)
 		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
-	}
+        scores, err := LoadScores()
+        if err == nil {
+            startY := screenHeight/2 + 32 // Start a bit below the "Press 'R' to restart" message
+            for i, entry := range scores {
+                if i >= 5 { // Display top 5 scores
+                    break
+                }
+                scoreLine := fmt.Sprintf("%d. %s: %d", i+1, entry.Name, entry.Score)
+                text.Draw(r.screen, scoreLine, r.face, screenWidth/2-60, startY+(i*16), color.White)
+            }
+        } else {
+            log.Printf("Error loading scores: %v", err)
+        }
+    }
+	
 	if gameWon {
 		text.Draw(r.screen, "You Won!", r.face, screenWidth/2-40, screenHeight/2, color.White)
 		text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
@@ -248,6 +315,7 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 	if head.X < 0 || head.Y < 0 || head.X >= screenWidth/tileSize || head.Y >= screenHeight/tileSize {
 		gl.gameOver = true
 		gl.speed = 10
+		SaveScore(gl.score)
 		return
 	}
 
