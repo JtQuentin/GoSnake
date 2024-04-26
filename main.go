@@ -93,15 +93,26 @@ func LoadScores() ([]ScoreEntry, error) {
 type GameManager struct {
 	game         *Game
 	startManager *GameStartManager
+	pauseManager *GamePauseManager
 }
 
-func NewGameManager(game *Game, startManager *GameStartManager) *GameManager {
-	return &GameManager{game: game, startManager: startManager}
+func NewGameManager(game *Game, startManager *GameStartManager, pauseManager *GamePauseManager) *GameManager {
+	return &GameManager{game: game, startManager: startManager, pauseManager: pauseManager}
 }
 
 func (gm *GameManager) Update(screen *ebiten.Image) error {
 	if !gm.startManager.IsGameStarted() {
 		gm.startManager.HandleStartInput()
+		return nil
+	}
+
+	if !gm.startManager.IsGameStarted() {
+		gm.startManager.HandleStartInput()
+		return nil
+	}
+
+	gm.pauseManager.HandlePauseInput()
+	if gm.pauseManager.IsGamePaused() {
 		return nil
 	}
 
@@ -168,8 +179,9 @@ func main() {
 	renderer := NewRenderer()
 	logic := NewGameLogic()
 	gameStartManager := NewGameStartManager()
+	gamePauseManager := NewGamePauseManager()
 	game := NewGame(snake, food, renderer, logic, gameStartManager)
-	gameManager := NewGameManager(game, gameStartManager)
+	gameManager := NewGameManager(game, gameStartManager, gamePauseManager)
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("GoSnake")
@@ -196,13 +208,13 @@ func NewSnake() *Snake {
 }
 
 func (s *Snake) updateDirection() {
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) && s.Direction.X == 0 {
+	if (ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)) && s.Direction.X == 0 {
 		s.Direction = Point{X: -1, Y: 0}
-	} else if ebiten.IsKeyPressed(ebiten.KeyRight) && s.Direction.X == 0 {
+	} else if (ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)) && s.Direction.X == 0 {
 		s.Direction = Point{X: 1, Y: 0}
-	} else if ebiten.IsKeyPressed(ebiten.KeyUp) && s.Direction.Y == 0 {
+	} else if (ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)) && s.Direction.Y == 0 {
 		s.Direction = Point{X: 0, Y: -1}
-	} else if ebiten.IsKeyPressed(ebiten.KeyDown) && s.Direction.Y == 0 {
+	} else if (ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)) && s.Direction.Y == 0 {
 		s.Direction = Point{X: 0, Y: 1}
 	}
 	s.Move()
@@ -265,9 +277,9 @@ func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool, gameStarted bo
 			text.Draw(r.screen, "Press 'R' to restart", r.face, screenWidth/2-60, screenHeight/2+16, color.White)
 			scores, err := LoadScores()
 			if err == nil {
-				startY := screenHeight/2 + 32 // Start a bit below the "Press 'R' to restart" message
+				startY := screenHeight/2 + 32
 				for i, entry := range scores {
-					if i >= 5 { // Display top 5 scores
+					if i >= 5 {
 						break
 					}
 					scoreLine := fmt.Sprintf("%d. %s: %d", i+1, entry.Name, entry.Score)
