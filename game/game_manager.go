@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"github.com/hajimehoshi/ebiten"
@@ -57,5 +57,5 @@ func (gm *GameManager) Draw(screen *ebiten.Image) {
 }
 
 func (gm *GameManager) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
+	return ScreenWidth, ScreenHeight
 }

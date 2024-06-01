@@ -1,17 +1,26 @@
-package main
+package game
 
 import (
+	"GoSnake/food"
+	"GoSnake/sound"
+
 	"github.com/hajimehoshi/ebiten"
+)
+
+const (
+	ScreenWidth  = 320
+	ScreenHeight = 240
+	TileSize     = 5
 )
 
 type Game struct {
 	snake        *Snake
-	food         *Food
+	food         *food.Food
 	renderer     *Renderer
 	logic        *GameLogic
 	startManager *GameStartManager
 	pauseManager *GamePauseManager
-	audioManager *AudioManager
+	audioManager *sound.AudioManager
 }
 
 type Drawable interface {
@@ -22,7 +31,7 @@ type Updatable interface {
 	Update() error
 }
 
-func NewGame(snake *Snake, food *Food, renderer *Renderer, logic *GameLogic, startManager *GameStartManager, pauseManager *GamePauseManager) *Game {
+func NewGame(snake *Snake, food *food.Food, renderer *Renderer, logic *GameLogic, startManager *GameStartManager, pauseManager *GamePauseManager) *Game {
 	return &Game{
 		snake:        snake,
 		food:         food,
@@ -43,11 +52,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(_, _ int) (int, int) {
-	return screenWidth, screenHeight
+	return ScreenWidth, ScreenHeight
 }
 
 func (g *Game) restart() {
 	g.snake = NewSnake()
-	g.food = NewFood()
+	g.food = food.NewFood()
 	g.logic = NewGameLogic(g.audioManager)
 }

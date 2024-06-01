@@ -1,4 +1,9 @@
-package main
+package game
+
+import (
+	"GoSnake/food"
+	"GoSnake/sound"
+)
 
 type GameLogic struct {
 	score         int
@@ -6,10 +11,10 @@ type GameLogic struct {
 	gameWon       bool
 	speed         int
 	updateCounter int
-	audioManager  *AudioManager
+	audioManager  *sound.AudioManager
 }
 
-func NewGameLogic(audioManager *AudioManager) *GameLogic {
+func NewGameLogic(audioManager *sound.AudioManager) *GameLogic {
 	return &GameLogic{
 		speed:        10,
 		audioManager: audioManager,
@@ -44,9 +49,9 @@ func (gl *GameLogic) UpdateTick() bool {
 	return true
 }
 
-func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
+func (gl *GameLogic) CheckCollisions(snake *Snake, food *food.Food) {
 	head := snake.Body[0]
-	if head.X < 0 || head.Y < 0 || head.X >= screenWidth/tileSize || head.Y >= screenHeight/tileSize {
+	if head.X < 0 || head.Y < 0 || head.X >= ScreenWidth/TileSize || head.Y >= ScreenHeight/TileSize {
 		gl.gameOver = true
 		gl.speed = 10
 		SaveScore(gl.score)
@@ -66,7 +71,7 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 	if head.X == food.Position.X && head.Y == food.Position.Y {
 		gl.score++
 		snake.GrowCounter += 1
-		*food = *NewFood()
+		*food = *food.NewFood()
 		gl.audioManager.PlayEatSound() // Play the eat sound when food is eaten
 
 		if gl.score == 25 {

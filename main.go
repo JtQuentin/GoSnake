@@ -7,6 +7,10 @@ import (
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/audio"
+
+	"GoSnake/food"
+	"GoSnake/game"
+	"GoSnake/sound"
 )
 
 const (
@@ -21,16 +25,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	audioManager := NewAudioManager(audioCtx)
+	audioManager := sound.NewAudioManager(audioCtx)
 
-	snake := NewSnake()
-	food := NewFood()
-	renderer := NewRenderer()
-	logic := NewGameLogic(audioManager)
-	gameStartManager := NewGameStartManager()
-	gamePauseManager := NewGamePauseManager()
-	game := NewGame(snake, food, renderer, logic, gameStartManager, gamePauseManager)
-	gameManager := NewGameManager(game, gameStartManager, gamePauseManager)
+	snake := game.NewSnake()
+	food := food.NewFood()
+	renderer := game.NewRenderer()
+	logic := game.NewGameLogic(audioManager)
+	gameStartManager := game.NewGameStartManager()
+	gamePauseManager := game.NewGamePauseManager()
+	g := game.NewGame(snake, food, renderer, logic, gameStartManager, gamePauseManager)
+	gameManager := game.NewGameManager(g, gameStartManager, gamePauseManager)
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("GoSnake")

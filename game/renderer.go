@@ -1,9 +1,11 @@
-package main
+package game
 
 import (
 	"fmt"
 	"image/color"
 	"log"
+
+	"GoSnake/food"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -27,45 +29,45 @@ func (r *Renderer) drawBackground() {
 	r.screen.Fill(color.RGBA{154, 198, 0, 255})
 }
 
-func (r *Renderer) drawSnake(body []Point) {
+func (r *Renderer) drawSnake(body []food.Point) {
 	for _, p := range body {
-		ebitenutil.DrawRect(r.screen, float64(p.X*tileSize), float64(p.Y*tileSize), tileSize, tileSize, color.RGBA{33, 50, 15, 255})
+		ebitenutil.DrawRect(r.screen, float64(p.X*TileSize), float64(p.Y*TileSize), TileSize, TileSize, color.RGBA{33, 50, 15, 255})
 	}
 }
 
-func (r *Renderer) drawFood(position Point) {
-	ebitenutil.DrawRect(r.screen, float64(position.X*tileSize), float64(position.Y*tileSize), tileSize, tileSize, color.RGBA{231, 71, 29, 255})
+func (r *Renderer) drawFood(position food.Point) {
+	ebitenutil.DrawRect(r.screen, float64(position.X*TileSize), float64(position.Y*TileSize), TileSize, TileSize, color.RGBA{231, 71, 29, 255})
 }
 
 func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool, gameStarted bool, gamePaused bool) {
 	scoreText := fmt.Sprintf("Score: %d", score)
-	text.Draw(r.screen, scoreText, r.face, 5, screenHeight-5, color.White)
+	text.Draw(r.screen, scoreText, r.face, 5, ScreenHeight-5, color.White)
 
 	if !gameStarted {
 		startText := "Press 'SPACE' to start the game"
 		startTextWidth := text.BoundString(r.face, startText).Dx()
-		x := (screenWidth - startTextWidth) / 2
-		text.Draw(r.screen, startText, r.face, x, screenHeight/2, color.White)
+		x := (ScreenWidth - startTextWidth) / 2
+		text.Draw(r.screen, startText, r.face, x, ScreenHeight/2, color.White)
 	} else {
 		if gameOver {
 			gameOverText := "Game Over"
 			gameOverTextWidth := text.BoundString(r.face, gameOverText).Dx()
-			x := (screenWidth - gameOverTextWidth) / 2
-			text.Draw(r.screen, gameOverText, r.face, x, screenHeight/2, color.White)
+			x := (ScreenWidth - gameOverTextWidth) / 2
+			text.Draw(r.screen, gameOverText, r.face, x, ScreenHeight/2, color.White)
 
 			restartText := "Press 'R' to restart"
 			restartTextWidth := text.BoundString(r.face, restartText).Dx()
-			x = (screenWidth - restartTextWidth) / 2
-			text.Draw(r.screen, restartText, r.face, x, screenHeight/2+16, color.White)
+			x = (ScreenWidth - restartTextWidth) / 2
+			text.Draw(r.screen, restartText, r.face, x, ScreenHeight/2+16, color.White)
 			scores, err := LoadScores()
 			if err == nil {
-				startY := screenHeight/2 + 32
+				startY := ScreenHeight/2 + 32
 				for i, entry := range scores {
 					if i >= 5 {
 						break
 					}
 					scoreLine := fmt.Sprintf("%d. %s: %d", i+1, entry.Name, entry.Score)
-					text.Draw(r.screen, scoreLine, r.face, screenWidth/2-60, startY+(i*16), color.White)
+					text.Draw(r.screen, scoreLine, r.face, ScreenWidth/2-60, startY+(i*16), color.White)
 				}
 			} else {
 				log.Printf("Error loading scores: %v", err)
@@ -75,25 +77,25 @@ func (r *Renderer) drawUI(score int, gameOver bool, gameWon bool, gameStarted bo
 		if gameWon {
 			gameOverText := "You Won!"
 			gameOverTextWidth := text.BoundString(r.face, gameOverText).Dx()
-			x := (screenWidth - gameOverTextWidth) / 2
-			text.Draw(r.screen, gameOverText, r.face, x, screenHeight/2, color.White)
+			x := (ScreenWidth - gameOverTextWidth) / 2
+			text.Draw(r.screen, gameOverText, r.face, x, ScreenHeight/2, color.White)
 
 			restartText := "Press 'R' to restart"
 			restartTextWidth := text.BoundString(r.face, restartText).Dx()
-			x = (screenWidth - restartTextWidth) / 2
-			text.Draw(r.screen, restartText, r.face, x, screenHeight/2+16, color.White)
+			x = (ScreenWidth - restartTextWidth) / 2
+			text.Draw(r.screen, restartText, r.face, x, ScreenHeight/2+16, color.White)
 		}
 
 		if gamePaused {
 			pausedText := "You paused the game"
 			pausedTextWidth := text.BoundString(r.face, pausedText).Dx()
-			x := (screenWidth - pausedTextWidth) / 2
-			text.Draw(r.screen, pausedText, r.face, x, screenHeight/2-16, color.White)
+			x := (ScreenWidth - pausedTextWidth) / 2
+			text.Draw(r.screen, pausedText, r.face, x, ScreenHeight/2-16, color.White)
 
 			resumeText := "Press 'P' to resume"
 			resumeTextWidth := text.BoundString(r.face, resumeText).Dx()
-			x = (screenWidth - resumeTextWidth) / 2
-			text.Draw(r.screen, resumeText, r.face, x, screenHeight/2, color.White)
+			x = (ScreenWidth - resumeTextWidth) / 2
+			text.Draw(r.screen, resumeText, r.face, x, ScreenHeight/2, color.White)
 		}
 	}
 }
