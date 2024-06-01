@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/audio"
 )
 
 const (
@@ -16,11 +17,16 @@ const (
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
+	audioCtx, err := audio.NewContext(44100)
+	if err != nil {
+		log.Fatal(err)
+	}
+	audioManager := NewAudioManager(audioCtx)
 
 	snake := NewSnake()
 	food := NewFood()
 	renderer := NewRenderer()
-	logic := NewGameLogic()
+	logic := NewGameLogic(audioManager)
 	gameStartManager := NewGameStartManager()
 	gamePauseManager := NewGamePauseManager()
 	game := NewGame(snake, food, renderer, logic, gameStartManager, gamePauseManager)
@@ -31,4 +37,6 @@ func main() {
 	if err := ebiten.RunGame(gameManager); err != nil {
 		log.Fatal(err)
 	}
+
+	audioManager.Close()
 }

@@ -6,10 +6,14 @@ type GameLogic struct {
 	gameWon       bool
 	speed         int
 	updateCounter int
+	audioManager  *AudioManager
 }
 
-func NewGameLogic() *GameLogic {
-	return &GameLogic{speed: 10}
+func NewGameLogic(audioManager *AudioManager) *GameLogic {
+	return &GameLogic{
+		speed:        10,
+		audioManager: audioManager,
+	}
 }
 
 func (gl *GameLogic) HandleGameState(restartPressed, gameStarted bool) bool {
@@ -46,6 +50,7 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 		gl.gameOver = true
 		gl.speed = 10
 		SaveScore(gl.score)
+		gl.audioManager.PlayLoseSound() // Play the eat sound when food is eaten
 		return
 	}
 
@@ -53,6 +58,7 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 		if head.X == part.X && head.Y == part.Y {
 			gl.gameOver = true
 			gl.speed = 10
+
 			return
 		}
 	}
@@ -61,6 +67,7 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *Food) {
 		gl.score++
 		snake.GrowCounter += 1
 		*food = *NewFood()
+		gl.audioManager.PlayEatSound() // Play the eat sound when food is eaten
 
 		if gl.score == 25 {
 			gl.gameWon = true
