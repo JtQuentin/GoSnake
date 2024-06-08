@@ -23,3 +23,7 @@ func NewFood() *Food {
 		Position: Point{X: rand.Intn(ScreenWidth / TileSize), Y: rand.Intn(ScreenHeight / TileSize)},
 	}
 }
+
+func (f *Food) Reset() {
+	f.Position = Point{X: rand.Intn(ScreenWidth / TileSize), Y: rand.Intn(ScreenHeight / TileSize)}
+}

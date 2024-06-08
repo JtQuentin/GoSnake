@@ -55,7 +55,9 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *food.Food) {
 		gl.gameOver = true
 		gl.speed = 10
 		SaveScore(gl.score)
-		gl.audioManager.PlayLoseSound() // Play the eat sound when food is eaten
+		if gl.audioManager != nil {
+			gl.audioManager.PlayLoseSound()
+		}
 		return
 	}
 
@@ -63,7 +65,9 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *food.Food) {
 		if head.X == part.X && head.Y == part.Y {
 			gl.gameOver = true
 			gl.speed = 10
-
+			if gl.audioManager != nil {
+				gl.audioManager.PlayLoseSound()
+			}
 			return
 		}
 	}
@@ -71,8 +75,10 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *food.Food) {
 	if head.X == food.Position.X && head.Y == food.Position.Y {
 		gl.score++
 		snake.GrowCounter += 1
-		*food = *food.NewFood()
-		gl.audioManager.PlayEatSound() // Play the eat sound when food is eaten
+		food.Reset()
+		if gl.audioManager != nil {
+			gl.audioManager.PlayEatSound()
+		}
 
 		if gl.score == 25 {
 			gl.gameWon = true
