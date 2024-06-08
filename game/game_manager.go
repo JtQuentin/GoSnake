@@ -1,6 +1,8 @@
 package game
 
 import (
+	"GoSnake/vars"
+
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
@@ -57,5 +59,5 @@ func (gm *GameManager) Draw(screen *ebiten.Image) {
 }
 
 func (gm *GameManager) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return ScreenWidth, ScreenHeight
+	return vars.ScreenWidth, vars.ScreenHeight
 }

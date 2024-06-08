@@ -2,6 +2,7 @@ package game
 
 import (
 	"GoSnake/food"
+	"GoSnake/vars"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -14,7 +15,7 @@ type Snake struct {
 
 func NewSnake() *Snake {
 	return &Snake{
-		Body:      []food.Point{{X: ScreenWidth / TileSize / 2, Y: ScreenHeight / TileSize / 2}},
+		Body:      []food.Point{{X: vars.ScreenWidth / vars.TileSize / 2, Y: vars.ScreenHeight / vars.TileSize / 2}},
 		Direction: food.Point{X: 1, Y: 0},
 	}
 }

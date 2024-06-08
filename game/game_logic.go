@@ -3,6 +3,7 @@ package game
 import (
 	"GoSnake/food"
 	"GoSnake/sound"
+	"GoSnake/vars"
 )
 
 type GameLogic struct {
@@ -51,7 +52,7 @@ func (gl *GameLogic) UpdateTick() bool {
 
 func (gl *GameLogic) CheckCollisions(snake *Snake, food *food.Food) {
 	head := snake.Body[0]
-	if head.X < 0 || head.Y < 0 || head.X >= ScreenWidth/TileSize || head.Y >= ScreenHeight/TileSize {
+	if head.X < 0 || head.Y < 0 || head.X >= vars.ScreenWidth/vars.TileSize || head.Y >= vars.ScreenHeight/vars.TileSize {
 		gl.gameOver = true
 		gl.speed = 10
 		SaveScore(gl.score)

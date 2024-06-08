@@ -3,14 +3,9 @@ package game
 import (
 	"GoSnake/food"
 	"GoSnake/sound"
+	"GoSnake/vars"
 
 	"github.com/hajimehoshi/ebiten"
-)
-
-const (
-	ScreenWidth  = 320
-	ScreenHeight = 240
-	TileSize     = 5
 )
 
 type Game struct {
@@ -52,7 +47,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(_, _ int) (int, int) {
-	return ScreenWidth, ScreenHeight
+	return vars.ScreenWidth, vars.ScreenHeight
 }
 
 func (g *Game) restart() {

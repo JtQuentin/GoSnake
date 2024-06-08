@@ -11,12 +11,7 @@ import (
 	"GoSnake/food"
 	"GoSnake/game"
 	"GoSnake/sound"
-)
-
-const (
-	screenWidth  = 320
-	screenHeight = 240
-	tileSize     = 5
+	"GoSnake/vars"
 )
 
 func main() {
@@ -36,7 +31,7 @@ func main() {
 	g := game.NewGame(snake, food, renderer, logic, gameStartManager, gamePauseManager)
 	gameManager := game.NewGameManager(g, gameStartManager, gamePauseManager)
 
-	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
+	ebiten.SetWindowSize(vars.ScreenWidth*2, vars.ScreenHeight*2)
 	ebiten.SetWindowTitle("GoSnake")
 	if err := ebiten.RunGame(gameManager); err != nil {
 		log.Fatal(err)
