@@ -49,6 +49,9 @@ func (gm *GameManager) Update(screen *ebiten.Image) error {
 		return nil
 	}
 
+	// Process input for the snake direction
+	gm.game.snake.processInput()
+
 	// Update the game logic and check for collisions
 	if gm.game.logic.UpdateTick() {
 		gm.game.snake.updateDirection()

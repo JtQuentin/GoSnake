@@ -5,6 +5,7 @@ import (
 	"GoSnake/vars"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
 // Snake struct represents the snake in the game
@@ -22,17 +23,29 @@ func NewSnake() *Snake {
 	}
 }
 
-// updateDirection function updates the direction of the snake based on the key pressed
-func (s *Snake) updateDirection() {
-	if (ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)) && s.Direction.X == 0 {
-		s.Direction = food.Point{X: -1, Y: 0} // Move left
-	} else if (ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)) && s.Direction.X == 0 {
-		s.Direction = food.Point{X: 1, Y: 0} // Move right
-	} else if (ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)) && s.Direction.Y == 0 {
-		s.Direction = food.Point{X: 0, Y: -1} // Move up
-	} else if (ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)) && s.Direction.Y == 0 {
-		s.Direction = food.Point{X: 0, Y: 1} // Move down
+// processInput processes the key inputs and sets the new direction
+func (s *Snake) processInput() {
+	if inpututil.IsKeyJustPressed(ebiten.KeyA) || inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
+		if s.Direction.X == 0 {
+			s.Direction = food.Point{X: -1, Y: 0} // Move left
+		}
+	} else if inpututil.IsKeyJustPressed(ebiten.KeyD) || inpututil.IsKeyJustPressed(ebiten.KeyRight) {
+		if s.Direction.X == 0 {
+			s.Direction = food.Point{X: 1, Y: 0} // Move right
+		}
+	} else if inpututil.IsKeyJustPressed(ebiten.KeyW) || inpututil.IsKeyJustPressed(ebiten.KeyUp) {
+		if s.Direction.Y == 0 {
+			s.Direction = food.Point{X: 0, Y: -1} // Move up
+		}
+	} else if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyDown) {
+		if s.Direction.Y == 0 {
+			s.Direction = food.Point{X: 0, Y: 1} // Move down
+		}
 	}
+}
+
+// updateDirection updates the direction of the snake based on the processed input
+func (s *Snake) updateDirection() {
 	s.Move() // Move the snake in the updated direction
 }
 
