@@ -22,12 +22,12 @@ func NewAudioManager(ctx *audio.Context) *AudioManager {
 	am := &AudioManager{ctx: ctx}
 	var err error
 	// Load the eat sound
-	am.eatSoundPlayer, am.eatSoundFile, err = loadAudioPlayer(ctx, "eatSound.mp3")
+	am.eatSoundPlayer, am.eatSoundFile, err = loadAudioPlayer(ctx, "sound/eatSound.mp3")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Load the lose sound
-	am.loseSoundPlayer, am.loseSoundFile, err = loadAudioPlayer(ctx, "loseSound.mp3")
+	am.loseSoundPlayer, am.loseSoundFile, err = loadAudioPlayer(ctx, "sound/loseSound.mp3")
 	if err != nil {
 		log.Fatal(err)
 	}
