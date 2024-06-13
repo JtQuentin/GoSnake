@@ -15,6 +15,8 @@ type AudioManager struct {
 	eatSoundFile    *os.File       // The file for the eat sound
 	loseSoundPlayer *audio.Player  // The audio player for the lose sound
 	loseSoundFile   *os.File       // The file for the lose sound
+	winSoundPlayer  *audio.Player  // The audio player for the win sound
+	winSoundFile    *os.File       // The file for the win sound
 }
 
 // NewAudioManager creates a new AudioManager object
@@ -31,6 +33,11 @@ func NewAudioManager(ctx *audio.Context) *AudioManager {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Load the win sound
+	am.winSoundPlayer, am.winSoundFile, err = loadAudioPlayer(ctx, "sound/winSound.mp3")
+	if err != nil {
+		log.Fatal(err)
+	}
 	return am
 }
 
@@ -44,6 +51,11 @@ func (am *AudioManager) PlayEatSound() {
 func (am *AudioManager) PlayLoseSound() {
 	am.loseSoundPlayer.Rewind() // Rewind the audio player to the start
 	am.loseSoundPlayer.Play()   // Play the audio
+}
+
+func (am *AudioManager) PlayWinSound() {
+	am.winSoundPlayer.Rewind() // Rewind the audio player to the start
+	am.winSoundPlayer.Play()   // Play the audio
 }
 
 // loadAudioPlayer loads an audio player from a file

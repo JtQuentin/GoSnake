@@ -37,7 +37,7 @@ func main() {
 	gamePauseManager := game.NewGamePauseManager()
 
 	// Create a new game instance
-	g := game.NewGame(snake, food, renderer, logic, gameStartManager, gamePauseManager)
+	g := game.NewGame(snake, food, renderer, logic, gameStartManager, gamePauseManager, audioManager)
 
 	// Create a new game manager
 	gameManager := game.NewGameManager(g, gameStartManager, gamePauseManager)

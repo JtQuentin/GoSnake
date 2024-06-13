@@ -39,6 +39,9 @@ func (gl *GameLogic) HandleGameState(restartPressed, gameStarted bool) bool {
 
 // restartGame resets the game state, including the score, game over flag, and speed
 func (gl *GameLogic) restartGame() {
+	if gl.gameOver && gl.audioManager != nil {
+		gl.audioManager.PlayLoseSound()
+	}
 	gl.score = 0
 	gl.gameOver = false
 	gl.gameWon = false
@@ -96,6 +99,9 @@ func (gl *GameLogic) CheckCollisions(snake *Snake, food *food.Food) {
 		if gl.score == 25 {
 			gl.gameWon = true
 			gl.speed = 10
+			if gl.audioManager != nil {
+				gl.audioManager.PlayWinSound()
+			}
 		} else {
 			// Decrease the game speed if it's greater than 2
 			if gl.speed > 2 {

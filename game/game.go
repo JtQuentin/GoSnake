@@ -26,7 +26,7 @@ type Updatable interface {
 	Update() error
 }
 
-func NewGame(snake *Snake, food *food.Food, renderer *Renderer, logic *GameLogic, startManager *GameStartManager, pauseManager *GamePauseManager) *Game {
+func NewGame(snake *Snake, food *food.Food, renderer *Renderer, logic *GameLogic, startManager *GameStartManager, pauseManager *GamePauseManager, audioManager *sound.AudioManager) *Game {
 	return &Game{
 		snake:        snake,
 		food:         food,
@@ -34,6 +34,7 @@ func NewGame(snake *Snake, food *food.Food, renderer *Renderer, logic *GameLogic
 		logic:        logic,
 		startManager: startManager,
 		pauseManager: pauseManager,
+		audioManager: audioManager,
 	}
 }
 
@@ -53,5 +54,6 @@ func (g *Game) Layout(_, _ int) (int, int) {
 func (g *Game) restart() {
 	g.snake = NewSnake()
 	g.food = food.NewFood()
-	g.logic = NewGameLogic(g.audioManager)
+	g.logic = NewGameLogic(g.audioManager) // Use the existing audioManager
+	g.logic.restartGame()                  // Ensure the game logic is correctly reset
 }
