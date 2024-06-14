@@ -5,3 +5,7 @@ const (
 	ScreenHeight = 240
 	TileSize     = 5
 )
+
+type Point struct {
+	X, Y int
+}

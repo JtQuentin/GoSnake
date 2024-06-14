@@ -5,20 +5,16 @@ import (
 	"math/rand"
 )
 
-type Point struct {
-	X, Y int
-}
-
 type Food struct {
-	Position Point
+	Position vars.Point
 }
 
 func NewFood() *Food {
 	return &Food{
-		Position: Point{X: rand.Intn(vars.ScreenWidth / vars.TileSize), Y: rand.Intn(vars.ScreenHeight / vars.TileSize)},
+		Position: vars.Point{X: rand.Intn(vars.ScreenWidth / vars.TileSize), Y: rand.Intn(vars.ScreenHeight / vars.TileSize)},
 	}
 }
 
 func (f *Food) Reset() {
-	f.Position = Point{X: rand.Intn(vars.ScreenWidth / vars.TileSize), Y: rand.Intn(vars.ScreenHeight / vars.TileSize)}
+	f.Position = vars.Point{X: rand.Intn(vars.ScreenWidth / vars.TileSize), Y: rand.Intn(vars.ScreenHeight / vars.TileSize)}
 }

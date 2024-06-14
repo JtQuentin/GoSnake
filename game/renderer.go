@@ -5,7 +5,6 @@ import (
 	"image/color"
 	"log"
 
-	"GoSnake/food"
 	"GoSnake/vars"
 
 	"github.com/hajimehoshi/ebiten"
@@ -34,14 +33,14 @@ func (r *Renderer) drawBackground() {
 }
 
 // drawSnake draws the snake's body on the screen
-func (r *Renderer) drawSnake(body []food.Point) {
+func (r *Renderer) drawSnake(body []vars.Point) {
 	for _, p := range body {
 		ebitenutil.DrawRect(r.screen, float64(p.X*vars.TileSize), float64(p.Y*vars.TileSize), vars.TileSize, vars.TileSize, color.RGBA{33, 50, 15, 255})
 	}
 }
 
 // drawFood draws the food on the screen
-func (r *Renderer) drawFood(position food.Point) {
+func (r *Renderer) drawFood(position vars.Point) {
 	ebitenutil.DrawRect(r.screen, float64(position.X*vars.TileSize), float64(position.Y*vars.TileSize), vars.TileSize, vars.TileSize, color.RGBA{231, 71, 29, 255})
 }
 
